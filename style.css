@@ -1,0 +1,183 @@
+/* CSS Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+}
+
+body {
+    background-color: #050505;
+    color: #ffffff;
+    font-family: 'Montserrat', sans-serif;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+/* Atmospheric ambient glow behind the heart */
+#bg-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle, rgba(255, 77, 136, 0.15) 0%, rgba(255, 20, 147, 0.05) 40%, rgba(0, 0, 0, 0) 70%);
+    z-index: 1;
+    pointer-events: none;
+    animation: ambientPulse 8s ease-in-out infinite alternate;
+}
+
+/* Canvas styling */
+#heartCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    background: transparent;
+}
+
+/* Text Container */
+#textContainer {
+    position: absolute;
+    z-index: 3;
+    text-align: center;
+    pointer-events: none; /* Allows mouse/touch events to pass through to the canvas */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: scale(0.85);
+    transition: opacity 2.5s cubic-bezier(0.19, 1, 0.22, 1), transform 2.5s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+#textContainer.visible {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Romantic Message "Te quiero Yarelis" */
+.romantic-text {
+    font-family: 'Dancing Script', cursive;
+    font-size: 5rem;
+    font-weight: 700;
+    color: #ffb3c6;
+    background: linear-gradient(45deg, #ff4d88, #ffb3c6, #ff4d88);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 20px rgba(255, 77, 136, 0.4);
+    animation: textGlow 4s ease infinite alternate, gradientShift 6s linear infinite;
+    line-height: 1.2;
+    margin-bottom: 15px;
+}
+
+/* Elegant Subtext */
+.subtext {
+    font-size: 1.1rem;
+    font-weight: 300;
+    letter-spacing: 5px;
+    color: #ffffff;
+    opacity: 0.8;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    animation: subtextPulse 3s ease-in-out infinite alternate;
+}
+
+/* Interactive Tip at the bottom */
+#interactiveTip {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
+    font-size: 0.85rem;
+    font-weight: 300;
+    letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.4);
+    pointer-events: none;
+    animation: tipPulse 2s ease-in-out infinite;
+}
+
+/* Animations */
+@keyframes ambientPulse {
+    0% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.8;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1.15);
+        opacity: 1.2;
+    }
+}
+
+@keyframes textGlow {
+    0% {
+        filter: drop-shadow(0 0 5px rgba(255, 77, 136, 0.3)) drop-shadow(0 0 15px rgba(255, 77, 136, 0.2));
+    }
+    100% {
+        filter: drop-shadow(0 0 15px rgba(255, 77, 136, 0.7)) drop-shadow(0 0 35px rgba(255, 77, 136, 0.5));
+    }
+}
+
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes subtextPulse {
+    0% {
+        opacity: 0.6;
+        letter-spacing: 4px;
+    }
+    100% {
+        opacity: 0.9;
+        letter-spacing: 6px;
+    }
+}
+
+@keyframes tipPulse {
+    0%, 100% {
+        opacity: 0.2;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .romantic-text {
+        font-size: 3.5rem;
+    }
+    
+    .subtext {
+        font-size: 0.9rem;
+        letter-spacing: 3px;
+    }
+    
+    #interactiveTip {
+        font-size: 0.75rem;
+        bottom: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .romantic-text {
+        font-size: 2.8rem;
+    }
+    
+    .subtext {
+        font-size: 0.8rem;
+        letter-spacing: 2px;
+    }
+}
