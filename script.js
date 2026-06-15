@@ -15,6 +15,8 @@ const OUTLINE_PARTICLES_COUNT = 1000;
 const INTERIOR_PARTICLES_COUNT = 380; // Slightly more particles for a starry inner glow
 const heartParticles = [];
 const trailParticles = [];
+const floatingHearts = [];
+const FLOATING_HEARTS_COUNT = 45;
 
 // Interaction state
 const mouse = {
@@ -196,6 +198,80 @@ class Particle {
     }
 }
 
+// Class for floating heart sparkles and outlines in the background
+class FloatingHeart {
+    constructor(spawnAtBottom = false) {
+        this.reset(spawnAtBottom);
+    }
+
+    reset(spawnAtBottom) {
+        this.x = Math.random() * width;
+        this.y = spawnAtBottom ? height + 20 : Math.random() * height;
+        this.vx = (Math.random() - 0.5) * 0.5;
+        this.vy = -(Math.random() * 0.6 + 0.3); // float upwards slowly
+        this.size = Math.random() * 8 + 4; // size between 4px and 12px
+        this.colorPrefix = pinkShades[Math.floor(Math.random() * pinkShades.length)];
+        this.isOutline = Math.random() < 0.45; // 45% are outline silhouettes, others are filled
+        this.alpha = spawnAtBottom ? 0 : Math.random() * 0.4;
+        this.targetAlpha = Math.random() * 0.35 + 0.15; // soft max opacity
+        this.fadeSpeed = Math.random() * 0.003 + 0.001;
+        this.rotation = Math.random() * Math.PI * 2;
+        this.vRotation = (Math.random() - 0.5) * 0.015;
+        this.swaySeed = Math.random() * 100;
+        this.swaySpeed = Math.random() * 0.01 + 0.005;
+        this.swayAmount = Math.random() * 0.4 + 0.1;
+    }
+
+    update() {
+        this.y += this.vy;
+        this.x += this.vx + Math.sin(time * 2 + this.swaySeed) * this.swayAmount;
+        this.rotation += this.vRotation;
+        
+        // Fade in initially, fade out near the top
+        if (this.alpha < this.targetAlpha && this.y > height * 0.15) {
+            this.alpha += 0.008;
+        } else if (this.y < height * 0.15 || this.y < -20) {
+            this.alpha -= this.fadeSpeed * 2.5;
+        }
+
+        // If off-screen or faded, recycle to the bottom
+        if (this.alpha <= 0 || this.y < -20 || this.x < -20 || this.x > width + 20) {
+            this.reset(true);
+        }
+    }
+
+    draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+        ctx.beginPath();
+        
+        const size = this.size;
+        // Start at top cleft
+        ctx.moveTo(0, -size / 4);
+        // Left lobe
+        ctx.bezierCurveTo(-size / 2, -size / 2 - size / 4, -size, -size / 4, -size, size / 4);
+        // Left bottom
+        ctx.bezierCurveTo(-size, size / 2 + size / 4, -size / 2, size, 0, size * 1.2);
+        // Right bottom
+        ctx.bezierCurveTo(size / 2, size, size, size / 2 + size / 4, size, size / 4);
+        // Right lobe
+        ctx.bezierCurveTo(size, -size / 4, size / 2, -size / 2 - size / 4, 0, -size / 4);
+        ctx.closePath();
+        
+        const alpha = Math.max(0, this.alpha);
+        if (this.isOutline) {
+            ctx.strokeStyle = this.colorPrefix + alpha + ')';
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+        } else {
+            ctx.fillStyle = this.colorPrefix + alpha + ')';
+            ctx.fill();
+        }
+        ctx.restore();
+    }
+}
+
 // Generate the coordinates on a heart shape
 function initHeartParticles() {
     heartParticles.length = 0;
@@ -370,9 +446,19 @@ function animate() {
         }
     }
 
+    // Update & Draw Floating Hearts (sparkles and outlines around the screen)
+    for (let i = 0; i < floatingHearts.length; i++) {
+        const fh = floatingHearts[i];
+        fh.update();
+        fh.draw();
+    }
+
     requestAnimationFrame(animate);
 }
 
 // Initialise and start
 initHeartParticles();
+for (let i = 0; i < FLOATING_HEARTS_COUNT; i++) {
+    floatingHearts.push(new FloatingHeart(false));
+}
 animate();
