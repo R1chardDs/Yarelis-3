@@ -411,21 +411,20 @@ function animate() {
     // Assembly state checking
     if (animState === 'assembling') {
         assemblyProgress += 0.005;
-        if (assemblyProgress >= 1) {
-            animState = 'beating';
-        }
-    }
-
-    // Reveal text card after assembly is complete
-    if (animState === 'beating' && !textRevealed) {
-        textRevealed = true;
-        setTimeout(() => {
+        
+        // Trigger text reveal slightly before the full heart is finished assembling (approx 1.5s faster)
+        if (assemblyProgress >= 0.7 && !textRevealed) {
+            textRevealed = true;
             textContainer.classList.add('visible');
             // Smoothly fade out instructions
             interactiveTip.style.animation = 'none';
             interactiveTip.style.transition = 'opacity 2s ease';
             interactiveTip.style.opacity = '0.2';
-        }, 800);
+        }
+        
+        if (assemblyProgress >= 1) {
+            animState = 'beating';
+        }
     }
 
     // Update & Draw Heart Particles
