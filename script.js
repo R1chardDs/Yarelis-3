@@ -8,11 +8,11 @@ let width = canvas.width = window.innerWidth;
 let height = canvas.height = window.innerHeight;
 
 let centerX = width / 2;
-let centerY = height / 2;
+let centerY = height / 2 + (height * 0.05); // Shifted down 5% to center it better and avoid top-clipping
 
 // Particle configuration
 const OUTLINE_PARTICLES_COUNT = 1000;
-const INTERIOR_PARTICLES_COUNT = 200; // Reduced count to improve readability
+const INTERIOR_PARTICLES_COUNT = 380; // Slightly more particles for a starry inner glow
 const heartParticles = [];
 const trailParticles = [];
 
@@ -70,9 +70,9 @@ function isInsideHeart(px, py) {
     return (term * term * term - x2 * y2 * py) <= 0;
 }
 
-// Determine scale of the heart based on viewport size
+// Determine scale of the heart based on viewport size (15% smaller)
 function calculateHeartScale() {
-    return Math.min(width, height) / 38;
+    return (Math.min(width, height) / 38) * 0.85;
 }
 
 // Particle Class
@@ -200,17 +200,20 @@ class Particle {
 function initHeartParticles() {
     heartParticles.length = 0;
     
-    // 1. Generate border particles (high density, uniform along boundary)
+    // 1. Generate border particles using the smooth parametric formula (100% closed, no side-gap issues)
     for (let i = 0; i < OUTLINE_PARTICLES_COUNT; i++) {
-        const phi = (i / OUTLINE_PARTICLES_COUNT) * Math.PI * 2;
-        const pt = getHeartBoundaryPoint(phi);
+        const t = (i / OUTLINE_PARTICLES_COUNT) * Math.PI * 2;
         
-        const noiseX = (Math.random() - 0.5) * 0.01;
-        const noiseY = (Math.random() - 0.5) * 0.01;
+        // Parametric equations for a perfectly closed, smooth heart outline
+        const x = 16 * Math.pow(Math.sin(t), 3);
+        const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
         
-        // Scale to match old size (units roughly 15 times smaller)
-        const hx = (pt.x + noiseX) * 15;
-        const hy = -(pt.y + noiseY) * 15; // Negate y to point downwards in canvas
+        const noiseX = (Math.random() - 0.5) * 0.15;
+        const noiseY = (Math.random() - 0.5) * 0.15;
+        
+        // hx and hy coordinates (roughly in the range of [-16, 16])
+        const hx = x + noiseX;
+        const hy = y + noiseY;
         
         heartParticles.push(new Particle(true, hx, hy));
     }
@@ -228,14 +231,15 @@ function initHeartParticles() {
         const py = Math.random() * 2.35 - 1.05;
         
         if (isInsideHeart(px, py)) {
-            const hx = px * 15;
-            const hy = -py * 15; // Negate y for canvas
+            // Scale by 14.2 to match the parametric heart size (which is ~32 units wide)
+            const hx = px * 14.2;
+            const hy = -py * 14.2; // Negate y for canvas
             
             const p = new Particle(true, hx, hy);
             
             // Customize interior particles to be smaller and highly transparent
             p.size = Math.random() * 1.0 + 0.8; // smaller size (0.8 to 1.8px)
-            p.baseAlpha = Math.random() * 0.12 + 0.06; // very low opacity (0.06 to 0.18)
+            p.baseAlpha = Math.random() * 0.10 + 0.05; // very low opacity (0.05 to 0.15)
             p.colorPrefix = pinkShades[Math.floor(Math.random() * pinkShades.length)];
             
             heartParticles.push(p);
@@ -281,7 +285,7 @@ window.addEventListener('resize', () => {
     width = canvas.width = window.innerWidth;
     height = canvas.height = window.innerHeight;
     centerX = width / 2;
-    centerY = height / 2;
+    centerY = height / 2 + (height * 0.05);
 });
 
 // User interactions
