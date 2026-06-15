@@ -47,6 +47,9 @@ body {
 /* Text Container */
 #textContainer {
     position: absolute;
+    top: calc(50% + 5vh); /* Centered and shifted down 5vh to match the heart position */
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.85);
     z-index: 3;
     text-align: center;
     pointer-events: none; /* Allows mouse/touch events to pass through to the canvas */
@@ -55,13 +58,12 @@ body {
     align-items: center;
     justify-content: center;
     opacity: 0;
-    transform: scale(0.85);
     transition: opacity 2.5s cubic-bezier(0.19, 1, 0.22, 1), transform 2.5s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
 #textContainer.visible {
     opacity: 1;
-    transform: scale(1);
+    transform: translate(-50%, -50%) scale(1);
 }
 
 /* Romantic Message "Te quiero Yarelis" */

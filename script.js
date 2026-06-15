@@ -70,9 +70,9 @@ function isInsideHeart(px, py) {
     return (term * term * term - x2 * y2 * py) <= 0;
 }
 
-// Determine scale of the heart based on viewport size (15% smaller)
+// Determine scale of the heart based on viewport size
 function calculateHeartScale() {
-    return (Math.min(width, height) / 38) * 0.85;
+    return (Math.min(width, height) / 38) * 0.95;
 }
 
 // Particle Class
