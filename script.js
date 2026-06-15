@@ -11,7 +11,8 @@ let centerX = width / 2;
 let centerY = height / 2;
 
 // Particle configuration
-const HEART_PARTICLES_COUNT = 1500;
+const OUTLINE_PARTICLES_COUNT = 1000;
+const INTERIOR_PARTICLES_COUNT = 200; // Reduced count to improve readability
 const heartParticles = [];
 const trailParticles = [];
 
@@ -39,13 +40,34 @@ const pinkShades = [
     'rgba(255, 105, 180, '   // Pastel Pink
 ];
 
-// Parametric heart formula
-// x = 16 * sin^3(t)
-// y = -(13 * cos(t) - 5 * cos(2t) - 2 * cos(3t) - cos(4t))
-function getHeartPoint(t) {
-    const x = 16 * Math.pow(Math.sin(t), 3);
-    const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+// Algebraic heart equations (Implicit: (x^2 + y^2 - 1)^3 - x^2 * y^3 = 0)
+// Resolves y for a given x: y = (x^(2/3) ± sqrt(x^(4/3) - 4x^2 + 4)) / 2
+function getHeartBoundaryY(x, isTop) {
+    const x2_3 = Math.pow(x * x, 1 / 3);
+    const disc = x2_3 * x2_3 - 4 * x * x + 4;
+    const root = Math.sqrt(Math.max(0, disc));
+    
+    return isTop ? (x2_3 + root) / 2 : (x2_3 - root) / 2;
+}
+
+// Traces the entire algebraic heart boundary in a continuous loop based on phi [0, 2*PI]
+function getHeartBoundaryPoint(phi) {
+    const xMax = 1.138; // Slightly below 1.139 to prevent negative sqrt due to precision
+    const x = xMax * Math.sin(phi);
+    
+    // Check which quadrant/segment of the loop we are tracing
+    const isTop = (phi < Math.PI / 2) || (phi > 3 * Math.PI / 2);
+    const y = getHeartBoundaryY(x, isTop);
+    
     return { x, y };
+}
+
+// Check if a point (px, py) is inside the algebraic heart (with y positive upwards)
+function isInsideHeart(px, py) {
+    const x2 = px * px;
+    const y2 = py * py;
+    const term = x2 + y2 - 1;
+    return (term * term * term - x2 * y2 * py) <= 0;
 }
 
 // Determine scale of the heart based on viewport size
@@ -178,33 +200,47 @@ class Particle {
 function initHeartParticles() {
     heartParticles.length = 0;
     
-    // We want some particles on the sharp border, and some filling the interior
-    const outlineCount = Math.floor(HEART_PARTICLES_COUNT * 0.45);
-    const interiorCount = HEART_PARTICLES_COUNT - outlineCount;
-
-    // 1. Generate border particles
-    for (let i = 0; i < outlineCount; i++) {
-        const t = (i / outlineCount) * Math.PI * 2;
-        const pt = getHeartPoint(t);
-        // Add a tiny bit of noise so they look organic
-        const noiseX = (Math.random() - 0.5) * 0.15;
-        const noiseY = (Math.random() - 0.5) * 0.15;
-        heartParticles.push(new Particle(true, pt.x + noiseX, pt.y + noiseY));
+    // 1. Generate border particles (high density, uniform along boundary)
+    for (let i = 0; i < OUTLINE_PARTICLES_COUNT; i++) {
+        const phi = (i / OUTLINE_PARTICLES_COUNT) * Math.PI * 2;
+        const pt = getHeartBoundaryPoint(phi);
+        
+        const noiseX = (Math.random() - 0.5) * 0.01;
+        const noiseY = (Math.random() - 0.5) * 0.01;
+        
+        // Scale to match old size (units roughly 15 times smaller)
+        const hx = (pt.x + noiseX) * 15;
+        const hy = -(pt.y + noiseY) * 15; // Negate y to point downwards in canvas
+        
+        heartParticles.push(new Particle(true, hx, hy));
     }
 
-    // 2. Generate interior particles
-    for (let i = 0; i < interiorCount; i++) {
-        const t = Math.random() * Math.PI * 2;
-        const pt = getHeartPoint(t);
+    // 2. Generate interior particles (rejection sampling for perfect uniform distribution, no lines!)
+    let generatedInteriorCount = 0;
+    const maxRetries = INTERIOR_PARTICLES_COUNT * 20;
+    let retries = 0;
+    
+    while (generatedInteriorCount < INTERIOR_PARTICLES_COUNT && retries < maxRetries) {
+        retries++;
+        // Bounding box of the algebraic heart:
+        // x in [-1.15, 1.15], y in [-1.05, 1.30]
+        const px = (Math.random() - 0.5) * 2.3;
+        const py = Math.random() * 2.35 - 1.05;
         
-        // Distribute within the boundary using power distribution
-        // Math.pow(Math.random(), 0.6) yields a nice organic volume
-        const r = Math.pow(Math.random(), 0.7); 
-        
-        const targetX = pt.x * r;
-        const targetY = pt.y * r;
-        
-        heartParticles.push(new Particle(true, targetX, targetY));
+        if (isInsideHeart(px, py)) {
+            const hx = px * 15;
+            const hy = -py * 15; // Negate y for canvas
+            
+            const p = new Particle(true, hx, hy);
+            
+            // Customize interior particles to be smaller and highly transparent
+            p.size = Math.random() * 1.0 + 0.8; // smaller size (0.8 to 1.8px)
+            p.baseAlpha = Math.random() * 0.12 + 0.06; // very low opacity (0.06 to 0.18)
+            p.colorPrefix = pinkShades[Math.floor(Math.random() * pinkShades.length)];
+            
+            heartParticles.push(p);
+            generatedInteriorCount++;
+        }
     }
 }
 
